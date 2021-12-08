@@ -1,6 +1,7 @@
 #include "MecanumRobot.h"
 #include "ServoMotor.h"
 #include "RadioRemote.h"
+#include "ControlLogic.h"
 
 namespace MecanumRobot{
 
@@ -20,6 +21,8 @@ namespace MecanumRobot{
         []{ ServoMotor::timedFunction(servoMotors[3]); }
     };
 
+
+
     void init(){
         Serial.begin(9600);
         RadioRemote::init();
@@ -35,26 +38,25 @@ namespace MecanumRobot{
     }
 
 
+
     void onUpdate(){
         RadioRemote::read();
         
+        if(RadioRemote::rpmMinusButton->isLongPressed() || RadioRemote::rpmPlusButton->isLongPressed()) ControlLogic::resetRotationCenter();
+        else if(RadioRemote::rpmPlusButton->isPressed()) ControlLogic::selectPreviousRotationCenter();
+        else if(RadioRemote::rpmMinusButton->isPressed()) ControlLogic::selectNextRotationCenter();
+
+        ControlLogic::setXVelocity(RadioRemote::xAxisStick->getValue());
+        ControlLogic::setYVelocity(RadioRemote::yAxisStick->getValue());
+        ControlLogic::setRotationalVelocity(RadioRemote::zAxisStick->getValue());
+        ControlLogic::update();
+
         for(int i = 0; i < WHEEL_COUNT; i++){
-            if(RadioRemote::rabbitSwitch) servoMotors[i].setVelocity(RadioRemote::yAxis * ServoMotor::maxVelocity_rps);    
-            else servoMotors[i].setVelocity(RadioRemote::yAxis * 0.5);    
+            servoMotors[i].setVelocity(ControlLogic::wheelVelocity[i]); 
         }
-        
-        //#define MOTOR_VEL_PRINT
-        #ifdef MOTOR_VEL_PRINT
-        Serial.printf("--------------------\n");
-        for(int i = 0; i < 4; i++){
-            ServoMotor& motor = servoMotors[i];
-            Serial.printf("%v: %.3f  %.3f %s\n", motor.targetVelocity_rps, motor.actualVelocity_rps, motor.b_stopped ? "Stopped" : "Moving");
-        }
-        #endif
-        
-        //update robot vectors
-        //calculate new velocities for each wheel
     }
+
+
 
     uint32_t lastUpdateTime_microseconds = 0;
     uint32_t updateInterval_microseconds = 1000000.0 / UPDATE_FREQUENCY;
@@ -62,6 +64,8 @@ namespace MecanumRobot{
     uint32_t lastLedUpdateTime_milliseconds = 0;
     uint32_t ledUpdateInterval_milliseconds = 250;
     bool ledState = false;
+
+
 
     void loop(){
         uint32_t now_microseconds = micros();
