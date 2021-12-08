@@ -3,27 +3,47 @@
 
 namespace ControlLogic{
 
-    bool b_rabbitMode = false;
-
-    void setRabbitMode(){ b_rabbitMode = true; }
-    void setSnailMode(){ b_rabbitMode = false; }
-
-    double xVelocityActual_millimetersPerSecond = 0.0;
-    double yVelocityActual_millimetersPerSecond = 0.0;
-    double rotationalVelocityActual_degreesPerSecond = 0.0;
-
-    double xVelocityTarget_millimetersPerSecond = 0.0;
-    double yVelocityTarget_millimetersPerSecond = 0.0;
-    double rotationalVelocityTarget_degreesPerSecond = 0.0;
-
-    double translationAcceleration_millimetersPerSecondSquared = 300.0;
-    double rotationalAcceleration_degreesPerSecondSquared = 300.0;
-
-    double maxTranslationVelocity_millimetersPerSecond = 500.0;
-    double maxRotationalVelocity_degreesPerSecond = 100.0;
-
     double wheelDiameter_millimeters = 152.4;
     double wheelCircumference_millimeters = PI * wheelDiameter_millimeters;
+
+    double xVelActual_mmPerSec = 0.0;
+    double yVelActual_mmPerSec = 0.0;
+    double rotVelActual_degPerSec = 0.0;
+
+    double xVelTarg_mmPerSec = 0.0;
+    double yVelTarg_mmPerSec = 0.0;
+    double rotVelTarg_degPerSec = 0.0;
+
+    double translVelLim_mmPerSec = 0.0;
+    double rotVelLim_degPerSec = 0.0;
+    double translAcc_mmPerSecSq = 0.0;
+    double rotAcc_degPerSecSq = 0.0;
+
+    //====== Rabbit & Snail Modes ======
+
+    double rabbitTranslationVelocityLimit_mmPerSec = 500.0;
+    double rabbitRotationVelocityLimit_degPerSec = 80.0;
+    double rabbitTranslationAcceleration_mmPerSecSq = 500.0;
+    double rabbitRotationAcceleration_degPerSecSq = 500.0;
+
+    double snailTranslationVelocityLimit_mmPerSecond = 200.0;
+    double snailRotationVelocityLimit_degPerSecond = 25.0;
+    double snailTranslationAcceleration_mmPerSecSq = 250.0;
+    double snailRotationAcceleration_degPerSecSq = 250.0;
+
+    void setRabbitMode(){
+        translAcc_mmPerSecSq = rabbitTranslationAcceleration_mmPerSecSq;
+        rotAcc_degPerSecSq = rabbitRotationAcceleration_degPerSecSq;
+        translVelLim_mmPerSec = rabbitTranslationVelocityLimit_mmPerSec;
+        rotVelLim_degPerSec = rabbitRotationVelocityLimit_degPerSec;
+    }
+
+    void setSnailMode(){
+        translAcc_mmPerSecSq = snailTranslationAcceleration_mmPerSecSq;
+        rotAcc_degPerSecSq = snailRotationAcceleration_degPerSecSq;
+        translVelLim_mmPerSec = snailTranslationVelocityLimit_mmPerSecond;
+        rotVelLim_degPerSec = snailRotationVelocityLimit_degPerSecond;
+    }
 
     Vector2 wheelFrictionVector_millimetersPerRevolution[WHEEL_COUNT] = {
         {sin(45.0) * wheelCircumference_millimeters, sin(45.0) * wheelCircumference_millimeters},  //front left
@@ -75,16 +95,16 @@ namespace ControlLogic{
         currentRotationCenter = 0;
     }
 
-    void setXVelocity(float v){
-        xVelocityTarget_millimetersPerSecond = v;
+    void setXVelocityNormalized(float v_n){
+        xVelTarg_mmPerSec = v_n * translVelLim_mmPerSec;
     }
     
-    void setYVelocity(float v){
-        yVelocityTarget_millimetersPerSecond = v;
+    void setYVelocityNormalized(float v_n){
+        yVelTarg_mmPerSec = v_n * translVelLim_mmPerSec;
     }
 
-    void setRotationalVelocity(float v){
-        rotationalVelocityTarget_degreesPerSecond = v;
+    void setRotationalVelocityNormalized(float v_n){
+        rotVelTarg_degPerSec = v_n * rotVelLim_degPerSec;
     }
 
     uint32_t previousUpdateTime_microseconds = 0.0;
@@ -95,32 +115,32 @@ namespace ControlLogic{
         double deltaT_seconds = (double)(now - previousUpdateTime_microseconds) / 1000000.0;
         previousUpdateTime_microseconds = now;
 
-        double deltaVTranslation_millimetersPerSecond = translationAcceleration_millimetersPerSecondSquared * deltaT_seconds;
+        double deltaVTranslation_millimetersPerSecond = translAcc_mmPerSecSq * deltaT_seconds;
 
-        if(xVelocityActual_millimetersPerSecond < xVelocityTarget_millimetersPerSecond){
-            xVelocityActual_millimetersPerSecond += deltaVTranslation_millimetersPerSecond;
-            if(xVelocityActual_millimetersPerSecond > xVelocityTarget_millimetersPerSecond) xVelocityActual_millimetersPerSecond = xVelocityTarget_millimetersPerSecond;
-        }else if(xVelocityActual_millimetersPerSecond > xVelocityTarget_millimetersPerSecond){
-            xVelocityActual_millimetersPerSecond -= deltaVTranslation_millimetersPerSecond;
-            if(xVelocityActual_millimetersPerSecond < xVelocityTarget_millimetersPerSecond) xVelocityActual_millimetersPerSecond = xVelocityTarget_millimetersPerSecond;
+        if(xVelActual_mmPerSec < xVelTarg_mmPerSec){
+            xVelActual_mmPerSec += deltaVTranslation_millimetersPerSecond;
+            if(xVelActual_mmPerSec > xVelTarg_mmPerSec) xVelActual_mmPerSec = xVelTarg_mmPerSec;
+        }else if(xVelActual_mmPerSec > xVelTarg_mmPerSec){
+            xVelActual_mmPerSec -= deltaVTranslation_millimetersPerSecond;
+            if(xVelActual_mmPerSec < xVelTarg_mmPerSec) xVelActual_mmPerSec = xVelTarg_mmPerSec;
         }
 
-        if(yVelocityActual_millimetersPerSecond < yVelocityTarget_millimetersPerSecond){
-            yVelocityActual_millimetersPerSecond += deltaVTranslation_millimetersPerSecond;
-            if(yVelocityActual_millimetersPerSecond > yVelocityTarget_millimetersPerSecond) yVelocityActual_millimetersPerSecond = yVelocityTarget_millimetersPerSecond;
-        }else if(yVelocityActual_millimetersPerSecond > yVelocityTarget_millimetersPerSecond){
-            yVelocityActual_millimetersPerSecond -= deltaVTranslation_millimetersPerSecond;
-            if(yVelocityActual_millimetersPerSecond < yVelocityTarget_millimetersPerSecond) yVelocityActual_millimetersPerSecond = yVelocityTarget_millimetersPerSecond;
+        if(yVelActual_mmPerSec < yVelTarg_mmPerSec){
+            yVelActual_mmPerSec += deltaVTranslation_millimetersPerSecond;
+            if(yVelActual_mmPerSec > yVelTarg_mmPerSec) yVelActual_mmPerSec = yVelTarg_mmPerSec;
+        }else if(yVelActual_mmPerSec > yVelTarg_mmPerSec){
+            yVelActual_mmPerSec -= deltaVTranslation_millimetersPerSecond;
+            if(yVelActual_mmPerSec < yVelTarg_mmPerSec) yVelActual_mmPerSec = yVelTarg_mmPerSec;
         }
 
-        double deltaVRotation_degreesPerSecond = rotationalAcceleration_degreesPerSecondSquared * deltaT_seconds;
+        double deltaVRotation_degreesPerSecond = rotAcc_degPerSecSq * deltaT_seconds;
 
-        if(rotationalVelocityActual_degreesPerSecond < rotationalVelocityTarget_degreesPerSecond){
-            rotationalVelocityActual_degreesPerSecond += deltaVRotation_degreesPerSecond;
-            if(rotationalVelocityActual_degreesPerSecond > rotationalVelocityTarget_degreesPerSecond) rotationalVelocityActual_degreesPerSecond = rotationalVelocityTarget_degreesPerSecond;
-        }else if(rotationalVelocityActual_degreesPerSecond > rotationalVelocityTarget_degreesPerSecond){
-            rotationalVelocityActual_degreesPerSecond -= deltaVRotation_degreesPerSecond;
-            if(rotationalVelocityActual_degreesPerSecond < rotationalVelocityTarget_degreesPerSecond) rotationalVelocityActual_degreesPerSecond = rotationalVelocityTarget_degreesPerSecond;
+        if(rotVelActual_degPerSec < rotVelTarg_degPerSec){
+            rotVelActual_degPerSec += deltaVRotation_degreesPerSecond;
+            if(rotVelActual_degPerSec > rotVelTarg_degPerSec) rotVelActual_degPerSec = rotVelTarg_degPerSec;
+        }else if(rotVelActual_degPerSec > rotVelTarg_degPerSec){
+            rotVelActual_degPerSec -= deltaVRotation_degreesPerSecond;
+            if(rotVelActual_degPerSec < rotVelTarg_degPerSec) rotVelActual_degPerSec = rotVelTarg_degPerSec;
         }
 
         Vector2 centerOfRotation = rotationCenters[currentRotationCenter];
@@ -130,10 +150,10 @@ namespace ControlLogic{
             wheelVelocity[i] = 0.0;
 
             //X component velocity
-            wheelVelocity[i] += xVelocityActual_millimetersPerSecond / wheelFrictionVector_millimetersPerRevolution[i].x;
+            wheelVelocity[i] += xVelActual_mmPerSec / wheelFrictionVector_millimetersPerRevolution[i].x;
 
             //Y component velocity
-            wheelVelocity[i] += yVelocityActual_millimetersPerSecond / wheelFrictionVector_millimetersPerRevolution[i].y;
+            wheelVelocity[i] += yVelActual_mmPerSec / wheelFrictionVector_millimetersPerRevolution[i].y;
 
             //Rotational Component velocity
 
@@ -144,7 +164,7 @@ namespace ControlLogic{
 
             float rotationRadius = sqrt(sq(relativeWheelPosition.x) + sq(relativeWheelPosition.y));
             float rotationCirclePerimeter = 2.0 * PI * rotationRadius;
-            float rotationVectorMagnitude = rotationCirclePerimeter * rotationalVelocityActual_degreesPerSecond / 360.0;
+            float rotationVectorMagnitude = rotationCirclePerimeter * rotVelActual_degPerSec / 360.0;
             rotationVectorMagnitude *= -1.0; //invert rotation vector to match remote control
 
             //vector perpendicular to radius of wheel position around rotation center vector
@@ -175,15 +195,20 @@ namespace ControlLogic{
         #define CONTROL_PROFILE_PRINT
         #ifdef CONTROL_PROFILE_PRINT
             Serial.println("---Control Logic---------------------------");
-            Serial.printf("Velocity (mm/s & deg/s)   X: %.3f  Y: %.3f  R: %.3f\n", xVelocityActual_millimetersPerSecond, yVelocityActual_millimetersPerSecond, rotationalVelocityActual_degreesPerSecond);
+            Serial.printf("Velocity (mm/s & deg/s)   X: %.3f  Y: %.3f  R: %.3f\n", xVelActual_mmPerSec, yVelActual_mmPerSec, rotVelActual_degPerSec);
+            Serial.printf("Translation Limit %.3fmm/s %.3fmm/s2\n", translVelLim_mmPerSec, translAcc_mmPerSecSq);
+            Serial.printf("Rotation Limit %.3fdeg/s %.3fdeg/s2\n", rotVelLim_degPerSec, rotAcc_degPerSecSq);
             Serial.printf("Rotation Center (mm) #%i   X: %.3f  Y: %.3f\n", currentRotationCenter, centerOfRotation.x, centerOfRotation.y);
             Serial.printf("Wheel Velocities (rps)    FL: %.3f  FR: %.3f\n                          BL: %.3f  BR: %.3f\n", wheelVelocity[0], wheelVelocity[1], wheelVelocity[2], wheelVelocity[3]);
         #endif
     }
 
     void reset(){
-        xVelocity_millimetersPerSecond = 0.0;
-        yVelocity_millimetersPerSecond = 0.0;
-        rotationalVelocity_degreesPerSecond = 0.0;
+        xVelActual_mmPerSec = 0.0;
+        yVelActual_mmPerSec = 0.0;
+        rotVelActual_degPerSec = 0.0;
+        xVelTarg_mmPerSec = 0.0;
+        yVelTarg_mmPerSec = 0.0;
+        rotVelTarg_degPerSec = 0.0;
     }
 }

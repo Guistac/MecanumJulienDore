@@ -42,13 +42,18 @@ namespace MecanumRobot{
     void onUpdate(){
         RadioRemote::read();
         
+        if(RadioRemote::rabbitSwitch->isFlipped()){
+            if(RadioRemote::rabbitSwitch->isOn()) ControlLogic::setRabbitMode();
+            else ControlLogic::setSnailMode();
+        }
         if(RadioRemote::rpmMinusButton->isLongPressed() || RadioRemote::rpmPlusButton->isLongPressed()) ControlLogic::resetRotationCenter();
         else if(RadioRemote::rpmPlusButton->isPressed()) ControlLogic::selectPreviousRotationCenter();
         else if(RadioRemote::rpmMinusButton->isPressed()) ControlLogic::selectNextRotationCenter();
 
-        ControlLogic::setXVelocity(RadioRemote::xAxisStick->getValue());
-        ControlLogic::setYVelocity(RadioRemote::yAxisStick->getValue());
-        ControlLogic::setRotationalVelocity(RadioRemote::zAxisStick->getValue());
+        ControlLogic::setXVelocityNormalized(RadioRemote::xAxisStick->getValue());
+        ControlLogic::setYVelocityNormalized(RadioRemote::yAxisStick->getValue());
+        ControlLogic::setRotationalVelocityNormalized(RadioRemote::zAxisStick->getValue());
+
         ControlLogic::update();
 
         for(int i = 0; i < WHEEL_COUNT; i++){
@@ -64,8 +69,6 @@ namespace MecanumRobot{
     uint32_t lastLedUpdateTime_milliseconds = 0;
     uint32_t ledUpdateInterval_milliseconds = 250;
     bool ledState = false;
-
-
 
     void loop(){
         uint32_t now_microseconds = micros();

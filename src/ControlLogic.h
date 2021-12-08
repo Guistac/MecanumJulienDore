@@ -9,12 +9,14 @@ struct Vector2{
 
 namespace ControlLogic{
 
+    extern double wheelVelocity[4];
+
     void setRabbitMode();
     void setSnailMode();
 
-    void setXVelocity(float v);
-    void setYVelocity(float v);
-    void setRotationalVelocity(float v);
+    void setXVelocityNormalized(float v);
+    void setYVelocityNormalized(float v);
+    void setRotationalVelocityNormalized(float v);
 
     void selectNextRotationCenter();
     void selectPreviousRotationCenter();

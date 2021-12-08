@@ -4,8 +4,8 @@ namespace RadioRemote{
 
     //======== public data ========
 
-    Switch* optionSwitch = new Switch(SPEED_PIN);
-    Switch* rabbitSwitch = new Switch(OPTION_PIN);
+    Switch* optionSwitch = new Switch(OPTION_PIN);
+    Switch* rabbitSwitch = new Switch(SPEED_PIN);
 
     Button* rpmPlusButton = new Button(RPM_POSITIVE_PIN);
     Button* rpmMinusButton = new Button(RPM_NEGATIVE_PIN);
@@ -42,7 +42,7 @@ namespace RadioRemote{
         Serial.printf("RPM+: %s %s\n", rpmPlusButton->isPressed() ? "PRESS !" : (rpmPlusButton->isDown() ? "pressed" : "not pressed"), rpmPlusButton->isLongPressed() ? "(Long Pressed)" : "");
         Serial.printf("RPM-: %s %s\n", rpmMinusButton->isPressed() ? "PRESS !" : (rpmMinusButton->isDown() ? "pressed" : "not pressed"), rpmMinusButton->isLongPressed() ? "(Long Pressed)" : "");
         Serial.printf("Option:  %s\n", optionSwitch->isFlipped() ? "FLIPPED" : (optionSwitch->isOn() ? "On" : "Off"));
-        Serial.printf("Option:  %s\n", rabbitSwitch->isFlipped() ? "FLIPPED" : (rabbitSwitch->isOn() ? "On" : "Off"));
+        Serial.printf("Rabbit:  %s\n", rabbitSwitch->isFlipped() ? "FLIPPED" : (rabbitSwitch->isOn() ? "On" : "Off"));
         Serial.printf("X: %.3f  %.3f\n", xAxisStick->getValue(), xAxisStick->getRawValue());
         Serial.printf("Y: %.3f  %.3f\n", yAxisStick->getValue(), yAxisStick->getRawValue());
         Serial.printf("Z: %.3f  %.3f\n", zAxisStick->getValue(), zAxisStick->getRawValue());
