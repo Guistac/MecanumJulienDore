@@ -1,0 +1,23 @@
+#=== Directories =======
+
+/Build
+/out
+.vs/
+bin/
+bin-int/
+obj/
+logs/
+
+#=== Files ==============
+
+*.user
+*.sln
+*.vcxproj
+*.filters
+*.ini
+*.json
+.DS_store
+*.xcodeproj
+*.xcworkspace
+*.log
+*.pio
