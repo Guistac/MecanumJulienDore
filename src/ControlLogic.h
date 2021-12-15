@@ -14,6 +14,9 @@ namespace ControlLogic{
     void setRabbitMode();
     void setSnailMode();
 
+    void setRelativeMode();
+    void setCompassMode();
+
     void setXVelocityNormalized(float v);
     void setYVelocityNormalized(float v);
     void setRotationalVelocityNormalized(float v);

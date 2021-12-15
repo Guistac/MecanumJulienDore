@@ -36,7 +36,7 @@ namespace RadioRemote{
         yAxisStick->update();
         zAxisStick->update();
 
-        #define PRINT_DEBUG_REMOTE
+        //#define PRINT_DEBUG_REMOTE
         #ifdef PRINT_DEBUG_REMOTE
         Serial.println("---Radio Remote-----------------------------------------");
         Serial.printf("RPM+: %s %s\n", rpmPlusButton->isPressed() ? "PRESS !" : (rpmPlusButton->isDown() ? "pressed" : "not pressed"), rpmPlusButton->isLongPressed() ? "(Long Pressed)" : "");

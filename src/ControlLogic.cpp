@@ -1,5 +1,7 @@
 #include "ControlLogic.h"
+
 #include "MecanumRobot.h"
+#include "Compass.h"
 
 namespace ControlLogic{
 
@@ -21,15 +23,15 @@ namespace ControlLogic{
 
     //====== Rabbit & Snail Modes ======
 
-    double rabbitTranslationVelocityLimit_mmPerSec = 500.0;
-    double rabbitRotationVelocityLimit_degPerSec = 80.0;
-    double rabbitTranslationAcceleration_mmPerSecSq = 500.0;
-    double rabbitRotationAcceleration_degPerSecSq = 500.0;
+    double rabbitTranslationVelocityLimit_mmPerSec = 400.0;
+    double rabbitTranslationAcceleration_mmPerSecSq = 400.0;
+    double rabbitRotationVelocityLimit_degPerSec = 30.0;
+    double rabbitRotationAcceleration_degPerSecSq = 30.0;
 
     double snailTranslationVelocityLimit_mmPerSecond = 200.0;
-    double snailRotationVelocityLimit_degPerSecond = 25.0;
-    double snailTranslationAcceleration_mmPerSecSq = 250.0;
-    double snailRotationAcceleration_degPerSecSq = 250.0;
+    double snailTranslationAcceleration_mmPerSecSq = 200.0;
+    double snailRotationVelocityLimit_degPerSecond = 15.0;
+    double snailRotationAcceleration_degPerSecSq = 15.0;
 
     void setRabbitMode(){
         translAcc_mmPerSecSq = rabbitTranslationAcceleration_mmPerSecSq;
@@ -43,6 +45,15 @@ namespace ControlLogic{
         rotAcc_degPerSecSq = snailRotationAcceleration_degPerSecSq;
         translVelLim_mmPerSec = snailTranslationVelocityLimit_mmPerSecond;
         rotVelLim_degPerSec = snailRotationVelocityLimit_degPerSecond;
+    }
+
+    bool b_compassMode = false;
+
+    void setRelativeMode(){
+        b_compassMode = false;
+    }
+    void setCompassMode(){
+        b_compassMode = true;
     }
 
     Vector2 wheelFrictionVector_millimetersPerRevolution[WHEEL_COUNT] = {
@@ -82,12 +93,12 @@ namespace ControlLogic{
     int currentRotationCenter = 0;
 
     void selectNextRotationCenter(){
-        if(currentRotationCenter == rotationCenterCount - 1) currentRotationCenter = 0;
+        if(currentRotationCenter == rotationCenterCount - 1 || currentRotationCenter == 0) currentRotationCenter = 1;
         else currentRotationCenter++;
     }
 
     void selectPreviousRotationCenter(){
-        if(currentRotationCenter == 0) currentRotationCenter = rotationCenterCount - 1;
+        if(currentRotationCenter == 1 || currentRotationCenter == 0) currentRotationCenter = rotationCenterCount - 1;
         else currentRotationCenter--;
     }
 
@@ -111,26 +122,29 @@ namespace ControlLogic{
 
     void update(){
 
+        float xVelocityTarget = xVelTarg_mmPerSec;
+        float yVelocityTarget = yVelTarg_mmPerSec;
+
         uint32_t now = micros();
         double deltaT_seconds = (double)(now - previousUpdateTime_microseconds) / 1000000.0;
         previousUpdateTime_microseconds = now;
 
         double deltaVTranslation_millimetersPerSecond = translAcc_mmPerSecSq * deltaT_seconds;
 
-        if(xVelActual_mmPerSec < xVelTarg_mmPerSec){
+        if(xVelActual_mmPerSec < xVelocityTarget){
             xVelActual_mmPerSec += deltaVTranslation_millimetersPerSecond;
-            if(xVelActual_mmPerSec > xVelTarg_mmPerSec) xVelActual_mmPerSec = xVelTarg_mmPerSec;
-        }else if(xVelActual_mmPerSec > xVelTarg_mmPerSec){
+            if(xVelActual_mmPerSec > xVelocityTarget) xVelActual_mmPerSec = xVelocityTarget;
+        }else if(xVelActual_mmPerSec > xVelocityTarget){
             xVelActual_mmPerSec -= deltaVTranslation_millimetersPerSecond;
-            if(xVelActual_mmPerSec < xVelTarg_mmPerSec) xVelActual_mmPerSec = xVelTarg_mmPerSec;
+            if(xVelActual_mmPerSec < xVelocityTarget) xVelActual_mmPerSec = xVelocityTarget;
         }
 
-        if(yVelActual_mmPerSec < yVelTarg_mmPerSec){
+        if(yVelActual_mmPerSec < yVelocityTarget){
             yVelActual_mmPerSec += deltaVTranslation_millimetersPerSecond;
-            if(yVelActual_mmPerSec > yVelTarg_mmPerSec) yVelActual_mmPerSec = yVelTarg_mmPerSec;
-        }else if(yVelActual_mmPerSec > yVelTarg_mmPerSec){
+            if(yVelActual_mmPerSec > yVelocityTarget) yVelActual_mmPerSec = yVelocityTarget;
+        }else if(yVelActual_mmPerSec > yVelocityTarget){
             yVelActual_mmPerSec -= deltaVTranslation_millimetersPerSecond;
-            if(yVelActual_mmPerSec < yVelTarg_mmPerSec) yVelActual_mmPerSec = yVelTarg_mmPerSec;
+            if(yVelActual_mmPerSec < yVelocityTarget) yVelActual_mmPerSec = yVelocityTarget;
         }
 
         double deltaVRotation_degreesPerSecond = rotAcc_degPerSecSq * deltaT_seconds;
@@ -191,8 +205,7 @@ namespace ControlLogic{
             wheelVelocity[i] += wheelRotationVector.y / wheelFrictionVector_millimetersPerRevolution[i].y;
         }
 
-
-        #define CONTROL_PROFILE_PRINT
+        //#define CONTROL_PROFILE_PRINT
         #ifdef CONTROL_PROFILE_PRINT
             Serial.println("---Control Logic---------------------------");
             Serial.printf("Velocity (mm/s & deg/s)   X: %.3f  Y: %.3f  R: %.3f\n", xVelActual_mmPerSec, yVelActual_mmPerSec, rotVelActual_degPerSec);
@@ -200,6 +213,7 @@ namespace ControlLogic{
             Serial.printf("Rotation Limit %.3fdeg/s %.3fdeg/s2\n", rotVelLim_degPerSec, rotAcc_degPerSecSq);
             Serial.printf("Rotation Center (mm) #%i   X: %.3f  Y: %.3f\n", currentRotationCenter, centerOfRotation.x, centerOfRotation.y);
             Serial.printf("Wheel Velocities (rps)    FL: %.3f  FR: %.3f\n                          BL: %.3f  BR: %.3f\n", wheelVelocity[0], wheelVelocity[1], wheelVelocity[2], wheelVelocity[3]);
+            Serial.printf("Heading: %.3f degrees\n", Compass::getHeadingDegrees());
         #endif
     }
 

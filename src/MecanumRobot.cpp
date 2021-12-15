@@ -2,6 +2,7 @@
 #include "ServoMotor.h"
 #include "RadioRemote.h"
 #include "ControlLogic.h"
+#include "Compass.h"
 
 namespace MecanumRobot{
 
@@ -22,6 +23,7 @@ namespace MecanumRobot{
     };
 
 
+    bool b_ready = false;
 
     void init(){
         Serial.begin(9600);
@@ -35,12 +37,25 @@ namespace MecanumRobot{
         servoMotors[2].b_invert = true;
         servoMotors[3].b_invert = false;
         pinMode(LED_PIN, OUTPUT);
+        ControlLogic::setSnailMode();
+        ControlLogic::setRelativeMode();
     }
 
 
 
     void onUpdate(){
+
         RadioRemote::read();
+
+        if(!b_ready){
+            if(RadioRemote::xAxisStick->getValue() == 0.0 && RadioRemote::yAxisStick->getValue() == 0.0 && RadioRemote::zAxisStick->getValue() == 0.0){
+                b_ready = true;
+                ControlLogic::reset();
+                for(int i = 0; i < WHEEL_COUNT; i++){
+                    servoMotors[i].enable();
+                }
+            }
+        }
         
         if(RadioRemote::rabbitSwitch->isFlipped()){
             if(RadioRemote::rabbitSwitch->isOn()) ControlLogic::setRabbitMode();
@@ -49,17 +64,21 @@ namespace MecanumRobot{
         if(RadioRemote::rpmMinusButton->isLongPressed() || RadioRemote::rpmPlusButton->isLongPressed()) ControlLogic::resetRotationCenter();
         else if(RadioRemote::rpmPlusButton->isPressed()) ControlLogic::selectPreviousRotationCenter();
         else if(RadioRemote::rpmMinusButton->isPressed()) ControlLogic::selectNextRotationCenter();
-
+        
         ControlLogic::setXVelocityNormalized(RadioRemote::xAxisStick->getValue());
         ControlLogic::setYVelocityNormalized(RadioRemote::yAxisStick->getValue());
         ControlLogic::setRotationalVelocityNormalized(RadioRemote::zAxisStick->getValue());
 
         ControlLogic::update();
 
-        for(int i = 0; i < WHEEL_COUNT; i++){
-            servoMotors[i].setVelocity(ControlLogic::wheelVelocity[i]); 
+        if(b_ready){
+            for(int i = 0; i < WHEEL_COUNT; i++){
+                servoMotors[i].setVelocity(ControlLogic::wheelVelocity[i]); 
+            }
         }
     }
+
+
 
 
 
@@ -80,7 +99,8 @@ namespace MecanumRobot{
         if(now_milliseconds > lastLedUpdateTime_milliseconds + ledUpdateInterval_milliseconds){
             lastLedUpdateTime_milliseconds = now_milliseconds;
             ledState = !ledState;
-            digitalWrite(LED_PIN, ledState);
+            //digitalWrite(LED_PIN, ledState);
+            digitalWrite(LED_PIN, b_ready);
         }
     }
 

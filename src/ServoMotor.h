@@ -27,6 +27,10 @@ public:
     static float maxVelocity_rps;
     static float minVelocity_rps;
 
+    void enable();
+    void disable();
+    bool b_enabled = false;
+
     //interrupt service routine
     IntervalTimer timer;
     static void timedFunction(ServoMotor& servoMotor);

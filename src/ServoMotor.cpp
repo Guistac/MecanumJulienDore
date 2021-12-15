@@ -12,6 +12,15 @@ void ServoMotor::init(){
     reset();
 }
 
+void ServoMotor::disable(){
+    b_enabled = false;
+    actualVelocity_rps = 0.0;
+    targetVelocity_rps = 0.0;
+}
+
+void ServoMotor::enable(){
+    b_enabled = true;
+}
 
 void ServoMotor::setVelocity(float velocity_rps){
     if(velocity_rps > maxVelocity_rps) targetVelocity_rps = maxVelocity_rps;
@@ -24,7 +33,7 @@ void ServoMotor::setVelocity(float velocity_rps){
 void ServoMotor::timedFunction(ServoMotor& motor){
 
     //only update motion profile on a low pulse
-    if(!motor.b_pulseState){
+    if(!motor.b_pulseState && motor.b_enabled){
 
         //update time delta in seconds
         uint32_t now_microseconds = micros();
