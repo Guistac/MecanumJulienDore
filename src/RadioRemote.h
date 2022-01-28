@@ -13,6 +13,11 @@
 #define OPTION_PIN 40
 #define SPEED_PIN 41
 
+//new buttons (subject to change)
+#define MOTOR_START_PIN 36
+#define MOTOR_STOP_PIN 37
+
+
 class Button{
 public:
 
@@ -104,4 +109,7 @@ namespace RadioRemote {
     extern Button* rpmMinusButton;
     extern Switch* optionSwitch;
     extern Switch* rabbitSwitch;
+
+    extern Button* motorStartButton;
+    extern Button* motorStopButton;
 }

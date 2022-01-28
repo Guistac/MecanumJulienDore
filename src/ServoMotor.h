@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Signal.h"
+
 #include <arduino.h>
 
 #define PULSES_PER_WHEEL_REVOLUTION 6400
@@ -10,10 +12,14 @@
 class ServoMotor{
 public:
 
-    ServoMotor(uint8_t pulse, uint8_t dir) : pulsePin(pulse), directionPin(dir) {}
+    ServoMotor(uint8_t pulse, uint8_t dir, uint8_t enabled, uint8_t fault) : pulsePin(pulse), directionPin(dir), enabledSignal(enabled, 50), faultSignal(fault, 50) {}
 
     uint8_t pulsePin = -1;
     uint8_t directionPin = -1;
+
+    InputSignal enabledSignal;
+    InputSignal faultSignal;
+    void updateSignals();
 
     void init();
     void reset();
@@ -27,9 +33,8 @@ public:
     static float maxVelocity_rps;
     static float minVelocity_rps;
 
-    void enable();
-    void disable();
-    bool b_enabled = false;
+    bool isEnabled();
+    bool hasFault();
 
     //interrupt service routine
     IntervalTimer timer;

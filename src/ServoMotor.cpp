@@ -1,25 +1,29 @@
 #include "ServoMotor.h"
 
-float ServoMotor::maxVelocity_rps = 1.5; //MAX_PULSE_FREQUENCY / PULSES_PER_WHEEL_REVOLUTION;
+float ServoMotor::maxVelocity_rps = 1.5; //MAX_PULSE_FREQUENCY / PULSES_PER_WHEEL_REVOLUTION; //Was 1.5
 float ServoMotor::minVelocity_rps = MIN_PULSE_FREQUENCY / PULSES_PER_WHEEL_REVOLUTION;
-
 
 void ServoMotor::init(){
     pinMode(pulsePin, OUTPUT);
     pinMode(directionPin, OUTPUT);
     digitalWrite(pulsePin, LOW);
     digitalWrite(directionPin, LOW);
+    faultSignal.init();
+    enabledSignal.init();
     reset();
 }
 
-void ServoMotor::disable(){
-    b_enabled = false;
-    actualVelocity_rps = 0.0;
-    targetVelocity_rps = 0.0;
+void ServoMotor::updateSignals(){
+    enabledSignal.update();
+    faultSignal.update();
 }
 
-void ServoMotor::enable(){
-    b_enabled = true;
+bool ServoMotor::isEnabled(){
+    return !enabledSignal.getState();
+}
+
+bool ServoMotor::hasFault(){
+    return !faultSignal.getState();
 }
 
 void ServoMotor::setVelocity(float velocity_rps){
@@ -29,11 +33,10 @@ void ServoMotor::setVelocity(float velocity_rps){
     else targetVelocity_rps = velocity_rps;
 }
 
-
 void ServoMotor::timedFunction(ServoMotor& motor){
 
     //only update motion profile on a low pulse
-    if(!motor.b_pulseState && motor.b_enabled){
+    if(!motor.b_pulseState){
 
         //update time delta in seconds
         uint32_t now_microseconds = micros();
@@ -82,7 +85,6 @@ void ServoMotor::timedFunction(ServoMotor& motor){
     digitalWrite(motor.pulsePin, motor.b_pulseState);
     digitalWrite(motor.directionPin, motor.b_directionState);
 }
-
 
 void ServoMotor::reset(){
     b_pulseState = false;

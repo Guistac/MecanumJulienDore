@@ -1,7 +1,6 @@
 #include "ControlLogic.h"
 
 #include "MecanumRobot.h"
-#include "Compass.h"
 
 namespace ControlLogic{
 
@@ -23,7 +22,7 @@ namespace ControlLogic{
 
     //====== Rabbit & Snail Modes ======
 
-    double rabbitTranslationVelocityLimit_mmPerSec = 400.0;
+    double rabbitTranslationVelocityLimit_mmPerSec = 400.0; //was 400
     double rabbitTranslationAcceleration_mmPerSecSq = 400.0;
     double rabbitRotationVelocityLimit_degPerSec = 30.0;
     double rabbitRotationAcceleration_degPerSecSq = 30.0;
@@ -213,7 +212,6 @@ namespace ControlLogic{
             Serial.printf("Rotation Limit %.3fdeg/s %.3fdeg/s2\n", rotVelLim_degPerSec, rotAcc_degPerSecSq);
             Serial.printf("Rotation Center (mm) #%i   X: %.3f  Y: %.3f\n", currentRotationCenter, centerOfRotation.x, centerOfRotation.y);
             Serial.printf("Wheel Velocities (rps)    FL: %.3f  FR: %.3f\n                          BL: %.3f  BR: %.3f\n", wheelVelocity[0], wheelVelocity[1], wheelVelocity[2], wheelVelocity[3]);
-            Serial.printf("Heading: %.3f degrees\n", Compass::getHeadingDegrees());
         #endif
     }
 
@@ -224,5 +222,6 @@ namespace ControlLogic{
         xVelTarg_mmPerSec = 0.0;
         yVelTarg_mmPerSec = 0.0;
         rotVelTarg_degPerSec = 0.0;
+        for(int i = 0; i < 4; i++) wheelVelocity[i] = 0.0;
     }
 }
