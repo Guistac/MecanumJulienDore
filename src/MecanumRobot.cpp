@@ -88,7 +88,7 @@ namespace MecanumRobot{
         emergencyStopClearSignal.update();
         for(int i = 0; i < 4; i++) servoMotors[i].updateSignals();
 
-        if(emergencyStopClearSignal.changed() && emergencyStopClearSignal.getState()) Serial.printf("update ! %i\n", millis());
+        //if(emergencyStopClearSignal.changed() && emergencyStopClearSignal.getState()) Serial.printf("update ! %i\n", millis());
 
         //wait for remote controls to settle before allowing any motion
         if(!b_booted && RadioRemote::xAxisStick->getValue() == 0.0 && RadioRemote::yAxisStick->getValue() == 0.0 && RadioRemote::zAxisStick->getValue() == 0.0){
